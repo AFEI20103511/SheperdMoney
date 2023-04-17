@@ -29,5 +29,10 @@ public class BalanceHistory {
     @ManyToOne
     @JoinColumn(name = "credit_card_id")
     private CreditCard creditCard;
-    
+
+    public BalanceHistory(double curBalance, LocalDate date, CreditCard creditCard) {
+        this.balance = curBalance;
+        this.date = date;
+        this.creditCard = creditCard;
+    }
 }

@@ -29,4 +29,9 @@ public class User {
     //       and user by a credit card.
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CreditCard> creditCards;
+
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
 }
