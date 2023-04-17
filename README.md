@@ -1,5 +1,19 @@
 # Shepherd Money Interview Project
 
+## From John
+Assupmption:
+ 1. one credit card can be attached to one user
+ 2. when updating balance history, if the input transaction date is earlier than any existing record dates,
+    this will be the first record and update the date from this date and onwards
+
+To do:
+ 1. balance history update is based on the assuption that one credit card can only be attached to one user.
+    But it is more realistic that one credit card can be attached to multiple users, like within a family.
+    Soluiton: 
+      a. update UpdateBalancePayload with userId field
+      b. update Balance updateBalanceHistory method correspondingly
+
+
 ## Introduction
 
 Thanks for your interest in applying to Shepherd Money! Complete this short toy project before your interview to help us evaluate your skills as a software engineer. It shouldn't take more than an hour if you know Spring Boot. We look forward to seeing your work and learning more about you!

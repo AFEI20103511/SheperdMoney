@@ -13,8 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,12 +23,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class CreditCardController {
 
     // TODO: wire in CreditCard repository here (~1 line)
-    UserRepository userRepository;
-    CreditCardRepository creditCardRepository;
+    private final UserRepository userRepository;
+    private final CreditCardRepository creditCardRepository;
+    private final BalanceHistoryRepository balanceHistoryRepository;
 
-    public CreditCardController(UserRepository userRepository, CreditCardRepository creditCardRepository) {
+    public CreditCardController(UserRepository userRepository, CreditCardRepository creditCardRepository, BalanceHistoryRepository balanceHistoryRepository) {
         this.userRepository = userRepository;
         this.creditCardRepository = creditCardRepository;
+        this.balanceHistoryRepository = balanceHistoryRepository;
     }
 
     @PostMapping("/credit-card")
@@ -42,17 +42,17 @@ public class CreditCardController {
         //       Do not worry about validating the card number, assume card number could be any arbitrary format and length
         // check if the user already exists
         if(userRepository.findUserById(payload.getUserId()) == null) {
-            // no such user
-            System.out.println("no such user");
+            // no such user, return code 400
+            System.out.println("No such user");
             return ResponseEntity.status(400).body(-1);
         }
-        // check if the credit card already attached to the user
+        // check if the credit card already attached to the user, assume one card can be attached to one person
         if(creditCardRepository.checkCreditCardAttached(payload.getUserId(), payload.getCardNumber()) != null) {
             // the credit card already attached to the user
             System.out.println("the credit card already attached to the user");
             return ResponseEntity.status(400).body(-1);
         }
-        // create a new credit card
+        // create a new credit card and attach it to the user
         User user = userRepository.findUserById(payload.getUserId());
         CreditCard creditCard = new CreditCard(payload.getCardIssuanceBank(), payload.getCardNumber(), user);
         creditCardRepository.save(creditCard);
@@ -80,8 +80,9 @@ public class CreditCardController {
         return users.isEmpty() ? ResponseEntity.status(400).body(new LinkedList<>()) : ResponseEntity.status(200).body(users);
     }
 
-//    @PostMapping("/credit-card:update-balance")
-    public ResponseEntity<String> postMethodName(@RequestBody UpdateBalancePayload[] payload) {
+    @PostMapping("/credit-card:update-balance")
+    @Transactional
+    public ResponseEntity<String> updateBalance(@RequestBody UpdateBalancePayload[] payload) {
         //TODO: Given a list of transactions, update credit cards' balance history.
         //      For example: if today is 4/12, a credit card's balanceHistory is [{date: 4/12, balance: 110}, {date: 4/10, balance: 100}],
         //      Given a transaction of {date: 4/10, amount: 10}, the new balanceHistory is
@@ -98,10 +99,13 @@ public class CreditCardController {
             }
         }
         // update the balance history
+        Balance balance = new Balance(balanceHistoryRepository);
         for(UpdateBalancePayload updateBalancePayload:payload) {
-
+            String creditCardNumber = updateBalancePayload.getCreditCardNumber();
+            CreditCard creditCard = creditCardRepository.checkCreditCardExists(creditCardNumber);
+            balance.updateBalanceHistory(creditCard, updateBalancePayload.getTransactionTime(), updateBalancePayload.getCurrentBalance());
         }
-        return null;
+        return ResponseEntity.status(200).body("Balance updated");
     }
     
 }
